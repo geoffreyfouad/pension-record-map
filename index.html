@@ -1,0 +1,929 @@
+<!doctype html>
+<html>
+<head>
+    <title>Battles of Connecticut Farms and Springfield Mobile Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+    <link rel="stylesheet" href="Leaflet.PolylineMeasure.css">
+    <link rel="stylesheet" href="L.Control.Basemaps.css" />
+    <link rel="shortcut icon" href="#">
+    <style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+    .leaflet-control-layers .slider-wrapper {
+      margin-left: 20px; /* indent slider under checkbox */
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .leaflet-control-layers .slider-wrapper input[type=range] {
+      width: 180px;
+    }
+
+    /* Additional CSS for mobile display */
+    .leaflet-control-layers {
+        font-size: 18px;
+    }
+    
+    .leaflet-control-layers label {
+        padding: 6px 0;
+    }
+
+    .leaflet-image-layer {
+        cursor: pointer;
+    }
+
+    #startOverlay {
+        position: absolute;
+        top: 20px;              /* distance from top */
+        left: 50%;
+        transform: translateX(-50%);
+        
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        
+        padding: 16px 28px;
+        border-radius: 8px;
+
+        font-size: 22px;
+        font-weight: bold;
+        
+        z-index: 2000;          /* above everything */
+        
+        cursor: pointer;
+        text-align: center;
+
+        transition: opacity 0.3s ease;
+    }
+
+    #introScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* Original basic coloring */
+    /* background: rgba(0, 0, 0, 0.85);
+    color: white; */
+
+    /* light parchment and dark brown text */
+    background: #efe4c8;
+    color: #2b1b0f;
+
+    
+    /* background: linear-gradient(
+        180deg,
+        #f3e9d2 0%,
+        #e8d9b5 100%
+    );
+    color: #2b1b0f; */
+
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 2000;
+    text-align: center;
+    padding: 20px;
+
+    box-shadow: inset 0 0 80px rgba(60, 40, 20, 0.3);
+    }
+
+    .intro-content {
+        max-width: 400px;
+    }
+
+    #introScreen h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+        font-family: Georgia, serif;
+        color: #3a2412;
+    }
+
+    .subtitle {
+        font-size: 16px;
+        margin-bottom: 15px;
+        /* color: #ddd; */
+        color: #2b1b0f;
+        /* color: #5a3a1f; */
+        max-width: 320px;
+        margin: 0 auto 15px;
+        /* line-height: 1.4;
+        text-align: center; */
+    }
+
+    .instructions {
+        font-size: 14px;
+        margin-bottom: 25px;
+        line-height: 1.5;
+        color: #4a2f19;
+        /* Added for alignment */
+        text-align: left;
+        padding-left: 10px;
+        margin: 0 auto 25px auto;
+        line-height: 1.6;
+        max-width: 320px;
+    }
+
+    .button-group button {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+        padding: 14px;
+
+        font-size: 16px;
+        font-weight: bold;
+
+        /* border: none; */
+        border-radius: 6px;
+        border: 1px solid #3a2412;
+
+        background: #8b0000;   /* historic red */
+        color: white;
+
+        cursor: pointer;
+
+    }
+
+    .button-group button:hover {
+        background: #a00000;
+    }
+
+    /* fade out animation */
+    #introScreen.hidden {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+    }
+
+    #infoPanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 25%;
+    background: #f3e9d2;
+
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+
+    /* Hidden */
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+
+    z-index: 1500;
+
+    display: flex;
+    flex-direction: column;
+    }
+
+    #infoPanel.active {
+        /* Visible */
+        transform: translateY(0);
+    }
+
+    /* Header */
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 10px;
+        /* padding: 8px 10px 5px 10px; */
+
+        border-bottom: 1px solid #ccc;
+
+    }
+
+    /* Close panel button */
+    #panelClose {
+        position: absolute;
+        left: 10px;
+        font-size: 28px;
+        cursor: pointer;
+    }
+
+    /* Title */
+    #panelTitle {
+        margin: 0;
+        font-size: 18px;
+        color: #3a2412;
+    }
+
+    /* Panel scrolling */
+    .panel-content {
+        padding: 15px;
+        /* padding: 10px 15px; */
+        overflow-y: auto;
+
+        font-size: 14px;
+        color: #2b1b0f;
+    }
+    
+    /* .panel-content p {
+        margin-top: 0;
+    } */
+
+    .panel-content p {
+        margin-top: 0;
+        margin-bottom: 10px;
+    }
+
+    
+    /* .popup-title {
+        font-size: 16px;
+        color: #3a2412;
+        margin-bottom: 4px;
+    } */
+     
+    .popup-title {
+        font-size: 16px;
+        font-weight: bold;
+        border-bottom: 1px solid #8b0000;
+        padding-bottom: 4px;
+        margin-bottom: 4px;
+    }
+
+    .popup-divider {
+        border: none;
+        border-top: 1px solid #8b0000; /* historic red line */
+        margin: 6px 0 8px 0;
+    }
+
+    .popup-body {
+        font-size: 14px;
+        color: #2b1b0f;
+    }
+
+    .popup-body p {
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    
+    .leaflet-tooltip {
+        background: #f3e9d2;
+        color: #2b1b0f;
+
+        border: 1px solid #5a3a1f;
+        /* border: none; */
+        border-radius: 4px;
+
+        /* box-shadow: 0 1px 3px rgba(0,0,0,0.2); */
+
+        font-family: Georgia, serif;
+        font-size: 13px;
+
+        padding: 4px 8px;
+
+        position: relative;
+    }
+
+    /* .leaflet-tooltip-top:before {
+    border-top-color: #f3e9d2;
+    } */
+
+    /* .leaflet-tooltip-top:before {
+        border-top-color: transparent !important;
+    } */
+
+    .leaflet-tooltip-top:before {
+        content: "";
+        position: absolute;
+
+        left: 49%;
+        transform: translateX(-0%);
+        
+        bottom: -2px;
+
+        border-left: 6.9px solid transparent;
+        border-right: 6.9px solid transparent;
+        border-top: 6.9px solid #5a3a1f;
+    }
+
+    
+    .leaflet-tooltip-top:after {
+        content: "";
+        position: absolute;
+
+        left: 50%;
+        transform: translateX(-50%);
+
+        bottom: -6px;
+
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid #f3e9d2;
+    }
+
+    .church-tooltip.leaflet-tooltip-top:before {
+        content: "";
+        position: absolute;
+
+        left: 50%;
+        transform: translateX(-0%);
+        
+        bottom: -1.5px;
+
+        border-left: 6.9px solid transparent;
+        border-right: 6.9px solid transparent;
+        border-top: 6.9px solid #5a3a1f;
+    }
+
+    
+    .church-tooltip.leaflet-tooltip-top:after {
+        content: "";
+        position: absolute;
+
+        left: 50%;
+        transform: translateX(-50%);
+
+        bottom: -6px;
+
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 6px solid #f3e9d2;
+    }
+
+    
+    .leaflet-tooltip-bottom:before {
+        border-bottom-color: #f3e9d2;
+    }
+
+    .leaflet-tooltip-left:before {
+        border-left-color: #f3e9d2;
+    }
+
+    .leaflet-tooltip-right:before {
+        border-right-color: #f3e9d2;
+    }
+
+    /* .leaflet-popup-content {
+        font-family: Georgia, serif;
+    } */
+
+    /* Pop-up for desktop */
+    .leaflet-popup-content {
+        font-size: 14px;
+        padding: 8px;
+    }
+
+    /* Pop-up for mobile */
+    .popup-mobile .leaflet-popup-content {
+        font-size: 12px;
+        padding: 6px;
+        padding-left: 6px;
+        padding-right: 6px;
+        margin: 6px 6px 8px 6px;
+    }
+
+    /* Mobile pop-up narrower */
+    .popup-mobile .leaflet-popup-content-wrapper {
+        max-width: 220px;
+    }
+
+    /* Mobile pop-up title */
+    .popup-mobile .popup-title {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    /* Mobile pop-up smaller margin */
+    .popup-mobile .popup-body {
+        padding-left: 0;
+        margin-left: 0;
+    }
+    .popup-mobile .popup-body p {
+        margin-top: 0;
+        margin-bottom: 6px;
+    }
+    .popup-mobile .leaflet-popup-content-wrapper {
+        padding: 4px;
+        padding-right: 12px;
+    }
+
+    /* Mobile smaller close button */
+    .popup-mobile .leaflet-popup-close-button {
+        font-size: 16px;
+        top: 4px;
+        right: 6px;
+    }
+
+    .viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    background: #f3e9d2;
+    color: #2b1b0f;
+
+    z-index: 3000;
+
+    overflow-y: auto;
+    }
+
+    
+    .viewer {
+        transition: opacity 0.3s ease;
+    }
+
+    .viewer.hidden {
+        display: none;
+    }
+
+    .viewer-content {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 15px;
+    }
+
+    .viewer-header {
+        position: sticky;
+        top: 0;
+        background: #f3e9d2;
+        padding-bottom: 10px;
+        z-index: 10;
+    }
+
+    #viewer-close {
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 28px;
+        cursor: pointer;
+    }
+
+    /* Images stack vertically */
+    .viewer-images img {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin-bottom: 10px;
+        opacity: 0;
+        transition: transform 0.3s ease;
+        cursor: zoom-in;
+    }
+
+    
+    .viewer-images img {
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+    }
+
+    
+    .viewer-images img[src] {
+        opacity: 1;
+    }
+
+    
+    .viewer-images img.zoomed {
+        transform: scale(2);   /* zoom level */
+        cursor: zoom-out;
+        transform-origin: center;
+        z-index: 10;
+    }
+
+    </style>
+</head>
+<body>
+    
+    <!-- <div id="introScreen">
+
+    <div class="intro-content">
+        <h1>Battles of Connecticut Farms & Springfield</h1>
+
+        <p class="subtitle">
+        Experience the Revolutionary War landscape through historic maps.
+        </p>
+
+        <p class="instructions">
+        • Allow location tracking to walk "in the maps"<br>
+        • Tap maps to bring them forward and learn more<br>
+        • Double-tap or long-press to zoom to a map<br>
+        • Adjust opacity at upper right to compare maps
+        </p>
+
+        <div class="button-group">
+        <button id="startWithAudio">Begin with Sound</button>
+        <button id="startWithoutAudio">Begin without Sound</button>
+        </div>
+    </div>
+
+    </div> -->
+
+    <!-- <div id="infoPanel">
+
+    <div class="panel-header">
+        <span id="panelClose">✕</span>
+        <h2 id="panelTitle"></h2>
+    </div>
+
+    <div class="panel-content" id="panelContent"></div>
+
+    </div> -->
+    <!-- <div id="startOverlay">Tap to Begin</div> -->
+    
+    <div id="viewer" class="viewer hidden">
+        <div class="viewer-content">
+
+            <div class="viewer-header">
+                <h2 id="viewer-title"></h2>
+                <p id="viewer-description"></p>
+                <span id="viewer-close">✕</span>
+            </div>
+
+            <div id="viewer-images" class="viewer-images"></div>
+
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+    <script src="Leaflet.PolylineMeasure.js"></script>
+    <script src="L.Control.Basemaps.js"></script>
+    <script>
+    var erskineBounds1 = [[40.640749,-74.351080], [40.751984,-74.221804]];
+    var erskineBounds2 = [[40.690499,-74.471729], [40.809893,-74.338760]];
+    var mapBounds = [[40.640749,-74.351080], [40.751984,-74.221804]];
+    var briantPark = [40.71541960523158,-74.33632850646974];
+    var zoomLevel = 15;
+
+    var map = L.map('map', {
+        maxZoom: 19,
+        minZoom: 5
+    }).setView([39.5, -75], 6);
+
+    map.createPane('gpsPane');
+    map.getPane('gpsPane').style.zIndex = 10003;
+
+    map.getPane('popupPane').style.zIndex = 10002;
+
+    map.createPane('pensionPane');
+    map.getPane('pensionPane').style.zIndex = 10001;
+    
+    var combinedBounds = L.latLngBounds(erskineBounds1);
+    combinedBounds.extend(erskineBounds2);
+
+    
+    map.whenReady(function () {
+
+        setTimeout(function () {
+
+            map.flyToBounds(combinedBounds, {
+                maxZoom: 16,
+                padding: [20, 20],
+                duration: 2.0
+            });
+
+
+        }, 500);  // small delay looks nicer
+
+    });
+
+    var iconSet = {
+        marker: L.icon({
+            iconUrl: 'marker-icon-2x-black.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        })
+    };
+
+    var pensions = {
+        "Richard Lord Jones": {
+            coords: [40.7965847,-74.4660539],
+            icon: "marker",
+            description: "Pension claim of Richard Lord Jones, a ten-year old fife player who played for General Washington at a Morristown headquarters dinner including Mrs. Washington.",
+            images:[
+                "pensions/claim1-page1.jpg",
+                "pensions/claim1-page2.jpg"
+            ]
+        }
+    };
+
+    var pensionsLayer = L.layerGroup();
+
+    Object.entries(pensions).forEach(function([name, data]) {
+
+        var marker = L.marker(data.coords, {
+            icon: iconSet[data.icon],
+            pane: 'pensionPane'
+        });
+
+
+        marker.on('click', function () {
+
+            // Scroll to top
+            document.getElementById('viewer').scrollTop = 0;
+
+            // Set title and description
+            document.getElementById('viewer-title').textContent = name;
+            document.getElementById('viewer-description').textContent = data.description;
+
+            // Render images
+            let imagesHTML = '';
+
+            data.images.forEach(function(src) {
+                imagesHTML += `<img src="${src}" alt="Pension document page" loading="lazy" decoding="async">`;
+            });
+
+            document.getElementById('viewer-images').innerHTML = imagesHTML;
+
+            // Show viewer
+            document.getElementById('viewer').classList.remove('hidden');
+
+        });
+
+        pensionsLayer.addLayer(marker);
+
+    });
+
+    // document.getElementById('viewer-images').addEventListener('dblclick', function (e) {
+
+    //     const img = e.target;
+
+    //     // Only apply to images
+    //     if (img.tagName !== 'IMG') return;
+
+    //     img.classList.toggle('zoomed');
+
+    // });
+
+    const viewerImages = document.getElementById('viewer-images');
+
+    viewerImages.addEventListener('dblclick', function (e) {
+
+        const img = e.target;
+
+        if (img.tagName !== 'IMG') return;
+
+        const allImages = viewerImages.querySelectorAll('img');
+
+        // If already zoomed → reset all
+        if (img.classList.contains('zoomed')) {
+            allImages.forEach(i => i.classList.remove('zoomed'));
+            return;
+        }
+
+        // Otherwise:
+        // 1. remove zoom from all
+        allImages.forEach(i => i.classList.remove('zoomed'));
+
+        // 2. zoom only this one
+        img.classList.add('zoomed');
+
+        
+        img.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+
+    });
+
+    document.getElementById('viewer-close').addEventListener('click', function () {
+        document.getElementById('viewer').classList.add('hidden');
+    });
+
+    pensionsLayer.addTo(map);
+
+    // Pane function for drawing order
+    var zCounter = 300;
+    function bringLayerToTop(layer) {
+
+        zCounter += 1;
+
+        if (zCounter > 10000) {
+            zCounter = 300;
+        }
+
+        if (layer.options.pane) {
+            map.getPane(layer.options.pane).style.zIndex = zCounter;
+        }
+    }
+
+
+    // GPS code
+    var userMarker;
+    var accuracyCircle;
+
+    function onLocationFound(e) {
+    if (userMarker) {
+        map.removeLayer(userMarker);
+        map.removeLayer(accuracyCircle);
+    }
+
+    userMarker = L.circleMarker(e.latlng, {
+        pane: 'gpsPane',
+        radius: 8,
+        fillColor: "#007bff",
+        color: "#fff",
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 1
+    }).addTo(map);
+
+    accuracyCircle = L.circle(e.latlng, {
+        pane: 'gpsPane',
+        radius: e.accuracy,
+        color: "#007bff",
+        fillOpacity: 0.1
+    }).addTo(map);
+    }
+
+    map.locate({
+    watch: true,
+    enableHighAccuracy: true
+    });
+
+    map.on('locationfound', onLocationFound);
+
+    map.on('locationerror', function(e) {
+    console.warn("Location error:", e.message);
+    });
+
+    //End GPS code
+    map.attributionControl.setPrefix('Leaflet');
+    var basemaps = [
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                subdomains: 'abcd',
+                maxZoom: 19,
+                minZoom: 5,
+                label: 'OpenStreetMap'
+            }),
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri, Maxar, Earthstar Geographics',
+                subdomains: 'abcd',
+                maxZoom: 19,
+                minZoom: 5,
+                label: 'Esri imagery'
+            })
+        ];
+    map.addControl(L.control.basemaps({
+            basemaps: basemaps,
+            tileX: 0,
+            tileY: 0,
+            tileZ: 1,
+            position:'bottomleft'
+    }));
+    var blackIcon = L.icon({
+    iconUrl: 'marker-icon-2x-black.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+    });
+    var marker = L.marker(briantPark,{icon:blackIcon});
+    marker.bindPopup("<b>Briant Park</b><br>Proposed historic marker area");
+    var markerLayer = L.layerGroup([marker]);
+    //markerLayer.addTo(map);
+    
+    // var cannonballIcon = L.icon({
+    //     iconUrl: 'marker-icon-2x-black.png',
+    //     iconSize: [25, 41],     // adjust depending on your image
+    //     iconAnchor: [16, 16],   // center of the icon
+    //     popupAnchor: [0, -10]   // where popup appears
+    // });
+    // var cannonballHouse = L.marker([40.650289099641654, -74.39874153672635], {
+    //     icon: cannonballIcon
+    // });
+
+    // cannonballHouse.addTo(map);
+
+    
+    // var landmarkLayer = L.layerGroup([
+    //     cannonballHouse
+    // ]);
+
+    // landmarkLayer.addTo(map);
+
+    // Icons
+    
+    
+    
+
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    
+    var overlays = {
+    "Pensions": pensionsLayer
+    };
+    
+    var baseMaps = {};
+    var layersControl = L.control.layers(baseMaps, overlays,{collapsed:true}).addTo(map);
+
+    // Slider for one map
+    // map.whenReady(function () {
+    // var overlaysList = layersControl.getContainer()
+    //   .querySelector('.leaflet-control-layers-overlays');
+    // var labels = overlaysList.querySelectorAll('label');
+    // labels.forEach(function(label) {
+    //   if (label.textContent.trim() === "Erskine (1779)") {
+    //     var sliderWrapper = L.DomUtil.create('div', 'slider-wrapper', label.parentNode);
+    //     sliderWrapper.innerHTML = `
+    //       <label style="margin-left: 3px;">Opacity</label>
+    //       <input type="range" min="0" max="1" step="0.05" value="${overlay.options.opacity}">
+    //     `;
+    //     L.DomEvent.disableClickPropagation(sliderWrapper);
+    //     var slider = sliderWrapper.querySelector('input');
+    //     slider.addEventListener("input", function() {
+    //       overlay.setOpacity(this.value);
+    //     });
+    //   }
+    // });
+    // });
+
+    // Slider for multiple maps
+    // map.whenReady(function () {
+
+    // var overlaysList = layersControl.getContainer()
+    //     .querySelector('.leaflet-control-layers-overlays');
+
+    // var labels = overlaysList.querySelectorAll('label');
+
+    // labels.forEach(function(label) {
+
+    //     var layerName = label.textContent.trim();
+    //     var layer = maps[layerName];
+
+    //     if (layer && layer instanceof L.ImageOverlay) {
+
+    //     var sliderWrapper = L.DomUtil.create('div', 'slider-wrapper', label.parentNode);
+
+    //     sliderWrapper.innerHTML = `
+    //         <input type="range" min="0" max="1" step="0.05" value="${layer.options.opacity}">
+    //     `;
+
+    //     L.DomEvent.disableClickPropagation(sliderWrapper);
+
+    //     var slider = sliderWrapper.querySelector('input');
+
+    //     slider.addEventListener("input", function() {
+    //         layer.setOpacity(this.value);
+    //     });
+    //     }
+    // });
+    // });
+
+    map.whenReady(function () {
+
+    var overlaysList = layersControl.getContainer()
+        .querySelector('.leaflet-control-layers-overlays');
+
+    var labels = overlaysList.querySelectorAll('label');
+
+    labels.forEach(function(label) {
+
+        // Get the layer name reliably
+        var layerName = label.textContent.trim();
+
+        var layer = maps[layerName];
+
+        if (layer && layer instanceof L.ImageOverlay) {
+
+            // Create wrapper INSIDE this label
+            var sliderWrapper = L.DomUtil.create('div', 'slider-wrapper');
+
+            sliderWrapper.innerHTML = `
+                <input type="range" min="0" max="1" step="0.05" value="${layer.options.opacity}">
+            `;
+
+            // Append directly to THIS label
+            label.appendChild(sliderWrapper);
+
+            L.DomEvent.disableClickPropagation(sliderWrapper);
+
+            var slider = sliderWrapper.querySelector('input');
+
+            slider.addEventListener("input", function() {
+                layer.setOpacity(this.value);
+            });
+        }
+    });
+
+});
+    // End of slider code
+
+    L.control.polylineMeasure({unit:'landmiles',showUnitControl:true,unitControlUnits:["kilometres", "landmiles"],measureControlLabel:'&#128207;',measureControlTitleOn: 'Turn on measure tool',measureControlTitleOff: 'Turn off measure tool'}).addTo(map);
+    </script>
+</body>
+</html>
