@@ -305,10 +305,10 @@
         content: "";
         position: absolute;
 
-        left: 49%;
+        left: 50%;
         transform: translateX(-0%);
         
-        bottom: -2px;
+        bottom: -1px;
 
         border-left: 6.9px solid transparent;
         border-right: 6.9px solid transparent;
@@ -605,20 +605,57 @@
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
+        }),
+        pension: L.divIcon({
+            html: `
+                <svg width="24" height="28" viewBox="0 0 24 24">
+
+                    <!-- WHITE OUTLINE -->
+                    <path d="M6 2 H14 L20 8 V22 H6 Z"
+                        fill="none"
+                        stroke="#ffffff"
+                        stroke-width="4"/>
+
+                    <!-- MAIN PAPER -->
+                    <path d="M6 2 H14 L20 8 V22 H6 Z"
+                        fill="#f3e9d2"
+                        stroke="#5a3a1f"
+                        stroke-width="2"/>
+
+                    <!-- FOLDED CORNER -->
+                    <path d="M14 2 V8 H20"
+                        fill="none"
+                        stroke="#5a3a1f"
+                        stroke-width="2"/>
+
+                    <!-- TEXT LINES -->
+                    <line x1="8" y1="12" x2="18" y2="12" stroke="#5a3a1f" stroke-width="1"/>
+                    <line x1="8" y1="15" x2="18" y2="15" stroke="#5a3a1f" stroke-width="1"/>
+                    <line x1="8" y1="18" x2="16" y2="18" stroke="#5a3a1f" stroke-width="1"/>
+
+                </svg>
+                `,
+            className: '',
+            iconSize: [30, 36],
+            iconAnchor: [15, 28],
+            popupAnchor: [1, -34]
         })
     };
 
     var pensions = {
-        "Richard Lord Jones": {
+        "Richard Lord Jones, the boy fifer": {
             coords: [40.7965847,-74.4660539],
-            icon: "marker",
+            icon: "pension",
             description: "Pension claim of Richard Lord Jones, a ten-year old fife player who played for General Washington at a Morristown headquarters dinner including Mrs. Washington.",
             images:[
                 "pensions/claim1-page1.jpg",
                 "pensions/claim1-page2.jpg"
-            ]
+            ],
+            tooltip:"Richard Lord Jones,<br>the boy fifer"
         }
     };
+
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     var pensionsLayer = L.layerGroup();
 
@@ -628,6 +665,15 @@
             icon: iconSet[data.icon],
             pane: 'pensionPane'
         });
+        
+        if (!isTouchDevice) {
+            marker.bindTooltip(data.tooltip || name, {
+            direction: 'top',
+            offset: [-2, -25],
+            opacity: 0.95
+            });
+        }
+
 
 
         marker.on('click', function () {
@@ -817,11 +863,6 @@
     // landmarkLayer.addTo(map);
 
     // Icons
-    
-    
-    
-
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
     
     var overlays = {
